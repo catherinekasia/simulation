@@ -82,6 +82,48 @@ q95 = np.quantile(results, 0.95, axis=0)
 table = pd.DataFrame({'Mean': means, 'Std': stds, '95% Quantile': q95}, index=labels)
 print(table)
 
+def plotN(ax, N_sim, lamT, title):
+    x = np.arange(np.min(N_sim), np.max(N_sim) + 1)
+    ax.hist(N_sim, bins = 30, density = True, rwidth = 0.8)
+    ax.plot(x, stats.poisson(lamT).pmf(x), color = 'red')
+    ax.set_title(title)
+    ax.set_xlabel('Number of vessels')
+
+def plotS(ax, S_sim, mean, sd, title):
+    x = np.linspace(np.min(S_sim), np.max(S_sim), 200)
+    ax.hist(S_sim / 1e6, bins = 30, density = True, rwidth = 0.8)
+    ax.plot(x / 1e6, stats.norm(mean, sd).pdf(x) * 1e6, color = 'red')   #*1e6 b/c x-axis in million tons
+    ax.set_title(title)
+    ax.set_xlabel('Cargo (million tons)')
+
+#E[X] and E[X^2] of lognormal
+def m1(mu, sigma):
+    return np.exp(mu + sigma**2 / 2)
+
+def m2(mu, sigma):
+    return np.exp(2*mu + 2*sigma**2)
+
+#columns of results: N_C, N_B, N_T, N, S_C, S_B, S_T, S
+f, ax = plt.subplots(2, 4, figsize = (16, 7))
+plotN(ax[0, 0], results[:, 0], lam_C * T, 'Container')
+plotN(ax[0, 1], results[:, 2], lam_T * T, 'Tanker')
+plotN(ax[0, 2], results[:, 1], lam_B * T, 'Bulk')
+plotN(ax[0, 3], results[:, 3], (lam_C + lam_T + lam_B) * T, 'Total')
+
+#E[S] = lambda*T*E[X], Var(S) = lambda*T*E[X^2]
+plotS(ax[1, 0], results[:, 4], lam_C*T*m1(mu_C, sigma_C), np.sqrt(lam_C*T*m2(mu_C, sigma_C)), 'Container')
+plotS(ax[1, 1], results[:, 6], lam_T*T*m1(mu_T, sigma_T), np.sqrt(lam_T*T*m2(mu_T, sigma_T)), 'Tanker')
+plotS(ax[1, 2], results[:, 5], lam_B*T*m1(mu_B, sigma_B), np.sqrt(lam_B*T*m2(mu_B, sigma_B)), 'Bulk')
+mean_S = T * (lam_C*m1(mu_C, sigma_C) + lam_T*m1(mu_T, sigma_T) + lam_B*m1(mu_B, sigma_B))
+sd_S = np.sqrt(T * (lam_C*m2(mu_C, sigma_C) + lam_T*m2(mu_T, sigma_T) + lam_B*m2(mu_B, sigma_B)))
+plotS(ax[1, 3], results[:, 7], mean_S, sd_S, 'Total')
+
+ax[0, 0].set_ylabel('Density')
+ax[1, 0].set_ylabel('Density')
+plt.tight_layout()
+plt.savefig(os.path.join(os.path.dirname(__file__), 'yearly_distributions.png'), bbox_inches = 'tight')
+plt.show()
+
 capacity = 650000
 nDays = 20000
 daily = np.array([simPort(1)[7] for _ in range(nDays)])
