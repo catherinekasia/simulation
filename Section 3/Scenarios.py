@@ -69,7 +69,7 @@ c = 1.15
 larger = runScenario(constant * lam_C / c, constant * lam_B / c, constant * lam_T / c, mu_C + np.log(c), mu_B + np.log(c), mu_T + np.log(c), nYears)
 
 #table with scenario summary
-rows = [summary('Basic', basic), summary('Seasonal', seasonal), summary('Larger vessels', larger), summary('Basic, 800k capacity', basic, newCapacity)]
+rows = [summary('Basic', basic), summary('Seasonal', seasonal), summary('Larger vessels', larger), summary('Basic, 800k capacity', basic, newCapacity), summary('Growth, year 10', grown)]
 table = pd.DataFrame(rows, columns = ['Scenario', 'Mean', 'Std', '95% q', '99% q', 'P(day > cap)', 'Days over / year', 'CI low', 'CI high'])
 print(table.to_string(index=False))
 
